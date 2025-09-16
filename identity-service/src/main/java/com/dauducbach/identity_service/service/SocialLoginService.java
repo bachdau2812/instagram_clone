@@ -126,6 +126,7 @@ public class SocialLoginService extends DefaultReactiveOAuth2UserService {
 
         // Create events
         ProfileCreationEvent profileCreationEvent = ProfileCreationEvent.builder()
+                .userId(user.getId())
                 .username(user.getUsername())
                 .displayName(displayName)
                 .email(email)
@@ -138,7 +139,7 @@ public class SocialLoginService extends DefaultReactiveOAuth2UserService {
                 .build();
 
         // Create Kafka records
-        ProducerRecord<String, Object> profileRecord = new ProducerRecord<>("profile_creation_request", profileCreationEvent);
+        ProducerRecord<String, Object> profileRecord = new ProducerRecord<>("profile_creation_event", profileCreationEvent);
         SenderRecord<String, Object, String> profileSenderRecord = SenderRecord.create(profileRecord, "profile_creation");
 
         ProducerRecord<String, Object> notificationRecord = new ProducerRecord<>("user_creation_event", user.getId(), notificationEvent);
@@ -148,14 +149,22 @@ public class SocialLoginService extends DefaultReactiveOAuth2UserService {
         SenderRecord<String, Object, String> avatarSenderRecord = SenderRecord.create(avatarRecord, "avatar_save");
 
         // Save user and send events
-        return Mono.when(
-                kafkaSender.send(Mono.just(profileSenderRecord)),
-                kafkaSender.send(Mono.just(notificationSenderRecord)),
-                kafkaSender.send(Mono.just(avatarSenderRecord))
-        )
-                .then(r2dbcEntityTemplate.insert(User.class).using(user))
-                .then(r2dbcEntityTemplate.insert(UserRoles.class).using(UserRoles.builder().userId(user.getId()).roleName("USER").build()))
-                .thenReturn(oAuth2User);
+        return r2dbcEntityTemplate.insert(User.class).using(user)
+                .flatMap(savedUser ->
+                        r2dbcEntityTemplate.insert(UserRoles.class)
+                                .using(UserRoles.builder()
+                                        .userId(savedUser.getId())
+                                        .roleName("USER")
+                                        .build()
+                                )
+                                .then(Mono.when(
+                                        kafkaSender.send(Mono.just(profileSenderRecord)),
+                                        kafkaSender.send(Mono.just(notificationSenderRecord)),
+                                        kafkaSender.send(Mono.just(avatarSenderRecord))
+                                ))
+                                .doOnSuccess(unused -> log.info("Send Event complete"))
+                                .thenReturn(oAuth2User)
+                );
     }
 
     private String generateUsername(String email) {

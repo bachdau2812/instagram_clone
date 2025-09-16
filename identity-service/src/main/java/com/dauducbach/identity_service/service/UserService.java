@@ -121,7 +121,8 @@ public class UserService {
                     .build();
 
             var profileCreationRequest = userMapper.toProfileCreationEvent(userRequest);
-            ProducerRecord<String, Object> producerRecord = new ProducerRecord<>("profile_creation_request", user.getId(), profileCreationRequest);
+            profileCreationRequest.setUserId(user.getId());
+            ProducerRecord<String, Object> producerRecord = new ProducerRecord<>("profile_creation_event", user.getId(), profileCreationRequest);
             SenderRecord<String, Object, String> senderRecord = SenderRecord.create(producerRecord, "Gui event de tao profile tuong ung voi nguoi dung");
 
             var notificationEvent = NotificationEvent.builder().build();
