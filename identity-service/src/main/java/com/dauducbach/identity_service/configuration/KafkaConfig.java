@@ -1,6 +1,5 @@
 package com.dauducbach.identity_service.configuration;
 
-import com.dauducbach.event.NotificationEvent;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.context.annotation.Bean;

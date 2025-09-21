@@ -1,0 +1,22 @@
+package com.dauducbach.notification_service.constant;
+
+public enum NotificationEvent {
+    POST_CREATED,
+    POST_LIKED,
+    POST_COMMENTED,
+    LIKE_COMMENT,
+    LIKE_POST,
+    COMMENT_REPLIED,
+    COMMENT_LIKED,
+    USER_FOLLOWED,
+    FRIEND_REQUEST_SENT,
+    FRIEND_REQUEST_ACCEPTED,
+    MESSAGE_SENT,
+    MESSAGE_MENTION,
+    GROUP_INVITE,
+    GROUP_JOINED,
+    EVENT_CREATED,
+    EVENT_INVITE,
+    PROFILE_TAGGED,
+    SYSTEM_ALERT
+}

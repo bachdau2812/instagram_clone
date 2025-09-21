@@ -1,6 +1,6 @@
 package com.dauducbach.identity_service.service;
 
-import com.dauducbach.event.NotificationEvent;
+import com.dauducbach.event.user_service.NotificationEvent;
 import com.dauducbach.event.ProfileCreationEvent;
 import com.dauducbach.event.SaveAvatarFromOauth2Event;
 import com.dauducbach.identity_service.entity.User;
@@ -8,7 +8,6 @@ import com.dauducbach.identity_service.entity.UserRoles;
 import com.dauducbach.identity_service.exception.AppException;
 import com.dauducbach.identity_service.exception.ErrorCode;
 import com.dauducbach.identity_service.repository.UserRepository;
-import com.dauducbach.identity_service.repository.UserRoleRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -26,6 +25,7 @@ import reactor.core.publisher.Mono;
 import reactor.kafka.sender.KafkaSender;
 import reactor.kafka.sender.SenderRecord;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -132,7 +132,11 @@ public class SocialLoginService extends DefaultReactiveOAuth2UserService {
                 .email(email)
                 .build();
 
-        NotificationEvent notificationEvent = NotificationEvent.builder()
+        var notificationEvent = NotificationEvent.builder()
+                .subject("Chao mung den voi binh nguyen vo tan")
+                .recipient(new String[]{user.getEmail()})
+                .htmlContent("user_creation_event")
+                .attachments(new ArrayList<>())
                 .build();
 
         SaveAvatarFromOauth2Event saveAvatarFromOauth2Event = SaveAvatarFromOauth2Event.builder()

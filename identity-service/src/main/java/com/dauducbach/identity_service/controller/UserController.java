@@ -9,6 +9,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RestController
@@ -48,4 +49,10 @@ public class UserController {
     Mono<String> verifyAndSetUserAndSendNewPassword(@RequestBody VerifyForgetPasswordRequest request) {
         return userService.verifyAndSetUsernameAndSendNewPasswordToUser(request);
     }
+
+    @GetMapping("/get-all")
+    Flux<UserResponse> getAllUser() {
+        return userService.getAllUser();
+    }
+
 }

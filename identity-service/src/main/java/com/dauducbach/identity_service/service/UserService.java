@@ -1,10 +1,10 @@
 package com.dauducbach.identity_service.service;
 
+import com.dauducbach.event.user_service.NotificationEvent;
 import com.dauducbach.identity_service.constant.Provider;
-import com.dauducbach.event.EmailVerifyEvent;
-import com.dauducbach.event.ForgetPasswordEvent;
-import com.dauducbach.event.NewPasswordEvent;
-import com.dauducbach.event.NotificationEvent;
+import com.dauducbach.event.user_service.EmailVerifyEvent;
+import com.dauducbach.event.user_service.ForgetPasswordEvent;
+import com.dauducbach.event.user_service.NewPasswordEvent;
 import com.dauducbach.identity_service.dto.request.EmailVerifyRequest;
 import com.dauducbach.identity_service.dto.request.UserCreationRequest;
 import com.dauducbach.identity_service.dto.request.VerifyForgetPasswordRequest;
@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,8 @@ import reactor.kafka.sender.KafkaSender;
 import reactor.kafka.sender.SenderRecord;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.UUID;
 
 @Service
@@ -36,6 +39,7 @@ import java.util.UUID;
 @Slf4j
 
 public class UserService {
+    R2dbcEntityTemplate r2dbcEntityTemplate;
     UserRepository userRepository;
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
@@ -121,11 +125,18 @@ public class UserService {
                     .build();
 
             var profileCreationRequest = userMapper.toProfileCreationEvent(userRequest);
+            profileCreationRequest.setDob(LocalDate.parse(userRequest.getDob()));
+
             profileCreationRequest.setUserId(user.getId());
             ProducerRecord<String, Object> producerRecord = new ProducerRecord<>("profile_creation_event", user.getId(), profileCreationRequest);
             SenderRecord<String, Object, String> senderRecord = SenderRecord.create(producerRecord, "Gui event de tao profile tuong ung voi nguoi dung");
 
-            var notificationEvent = NotificationEvent.builder().build();
+            var notificationEvent = NotificationEvent.builder()
+                    .subject("Chao mung den voi binh nguyen vo tan")
+                    .recipient(new String[]{user.getEmail()})
+                    .htmlContent("user_creation_event")
+                    .attachments(new ArrayList<>())
+                    .build();
             ProducerRecord<String, Object> producerRecord1 = new ProducerRecord<>("user_creation_event", user.getId(), notificationEvent);
             SenderRecord<String, Object, String> senderRecord1 = SenderRecord.create(producerRecord1, "Gui thong bao chao mung toi nguoi dung");
 
@@ -136,7 +147,7 @@ public class UserService {
                     .onErrorResume(error -> Mono.error(
                             new RuntimeException("Gửi các event thất bại (profileService và notificationService)", error)
                     ))
-                    .then(Mono.defer(() -> userRepository.save(user)))
+                    .then(Mono.defer(() -> r2dbcEntityTemplate.insert(User.class).using(user)))
                     .map(userMapper::toUserResponse);
         });
     }

@@ -1,4 +1,4 @@
-package com.dauducbach.event;
+package com.dauducbach.event.user_service;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -8,7 +8,7 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class NewPasswordEvent {
+public class ForgetPasswordEvent {
     String email;
-    String newPassword;
+    String code;
 }

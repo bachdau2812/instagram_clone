@@ -1,4 +1,4 @@
-package com.dauducbach.event;
+package com.dauducbach.event.user_service;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;

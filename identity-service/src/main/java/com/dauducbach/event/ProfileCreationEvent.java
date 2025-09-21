@@ -3,6 +3,8 @@ package com.dauducbach.event;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.time.LocalDate;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,4 +18,6 @@ public class ProfileCreationEvent {
     String email;
     String city;
     String job;
+
+    LocalDate dob;
 }

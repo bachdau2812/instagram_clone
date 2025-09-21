@@ -1,13 +1,10 @@
 package com.dauducbach.notification_service.entity;
 
-import com.dauducbach.notification_service.constant.NotificationChanel;
-import com.dauducbach.notification_service.constant.NotificationType;
+import com.dauducbach.notification_service.constant.EmailTypeConfig;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
-
-import java.time.Instant;
 
 @Data
 @NoArgsConstructor
@@ -15,13 +12,11 @@ import java.time.Instant;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 
-@Table("notification_config")
-public class UserNotificationConfig {
+@Table("email_config")
+public class EmailConfig {
     @Id
     String id;
     String userId;
-    NotificationType notificationType;
-    NotificationChanel notificationChanel;
-    boolean enabled;
-    Instant updateAt;
+    EmailTypeConfig emailTypeConfig;
+    boolean isEnable    ;
 }

@@ -25,10 +25,6 @@ spring:
       properties:
         spring.json.trusted.packages: "com.dauducbach.event"
 
-logging:
-  level:
-    org.springframework: DEBUG
-
 jwt:
   signerKey: ${JWT_SIGNER_KEY}
   valid-duration: 3600

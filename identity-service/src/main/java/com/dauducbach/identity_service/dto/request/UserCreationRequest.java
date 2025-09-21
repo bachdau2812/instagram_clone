@@ -3,6 +3,8 @@ package com.dauducbach.identity_service.dto.request;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.time.LocalDate;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,6 +20,7 @@ public class UserCreationRequest {
     String city;
     String job;
     String sex;
+    String dob;
 
     @Builder.Default
     String role = "USER";

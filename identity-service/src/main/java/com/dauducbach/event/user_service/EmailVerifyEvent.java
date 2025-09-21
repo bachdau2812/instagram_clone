@@ -1,4 +1,4 @@
-package com.dauducbach.event;
+package com.dauducbach.event.user_service;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -8,6 +8,8 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class NotificationEvent {
-    String content;
+public class EmailVerifyEvent {
+    String username;
+    String email;
+    String code;
 }
