@@ -1,13 +1,13 @@
-package com.dauducbach.fanout_service;
+package com.dauducbach;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class FanoutServiceApplication {
+public class StorageServiceApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(FanoutServiceApplication.class, args);
+		SpringApplication.run(StorageServiceApplication.class, args);
 	}
 
 }

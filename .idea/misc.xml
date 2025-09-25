@@ -8,6 +8,8 @@
         <option value="$PROJECT_DIR$/identity-service/pom.xml" />
         <option value="$PROJECT_DIR$/profile-service/pom.xml" />
         <option value="$PROJECT_DIR$/notification-service/pom.xml" />
+        <option value="$PROJECT_DIR$/fanout-service/pom.xml" />
+        <option value="$PROJECT_DIR$/storage-service/pom.xml" />
       </list>
     </option>
   </component>

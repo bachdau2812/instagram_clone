@@ -2,6 +2,7 @@ package com.dauducbach.identity_service.service;
 
 import com.dauducbach.identity_service.dto.request.RoleCreationRequest;
 import com.dauducbach.identity_service.entity.Role;
+import com.dauducbach.identity_service.exception.ErrorCode;
 import com.dauducbach.identity_service.mapper.RoleMapper;
 import com.dauducbach.identity_service.repository.RoleRepository;
 import lombok.AccessLevel;

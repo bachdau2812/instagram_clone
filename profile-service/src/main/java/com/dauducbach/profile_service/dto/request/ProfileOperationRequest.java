@@ -1,0 +1,17 @@
+package com.dauducbach.profile_service.dto.request;
+
+import com.dauducbach.profile_service.constant.ProfileOperationType;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Builder
+
+public class ProfileOperationRequest {
+    ProfileOperationType type;
+    String sourceId;
+    String targetId;
+}
