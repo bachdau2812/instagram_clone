@@ -1,5 +1,6 @@
 package com.dauducbach.storage_service.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.Id;
@@ -23,7 +24,10 @@ public class Media {
     int height;
     String format;
     String resourceType;
+
+    @JsonFormat(shape = JsonFormat.Shape.NUMBER)
     Instant createAt;
+
     int bytes;
     String url;
     String secureUrl;

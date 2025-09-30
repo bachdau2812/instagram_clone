@@ -1,8 +1,7 @@
-package com.dauducbach.event;
+package com.dauducbach.profile_service.dto.request;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.springframework.http.codec.multipart.FilePart;
 
 import java.util.List;
 
@@ -12,8 +11,6 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 
-public class UploadFileEvent {
-    String owner;
-    List<FilePart> medias;
-    boolean isAvatar;
+public class UserBasicInfoRequest {
+    List<String> userId;
 }

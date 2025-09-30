@@ -2,8 +2,9 @@ package com.dauducbach.profile_service.service;
 
 import com.dauducbach.event.ProfileCreationEvent;
 import com.dauducbach.event.ProfileEditEvent;
-import com.dauducbach.event.UploadFileEvent;
+import com.dauducbach.profile_service.dto.response.UserInfo;
 import com.dauducbach.profile_service.dto.request.ProfileEditRequest;
+import com.dauducbach.profile_service.dto.request.UserBasicInfoRequest;
 import com.dauducbach.profile_service.entity.Profile;
 import com.dauducbach.profile_service.mapper.ProfileMapper;
 import com.dauducbach.profile_service.repository.ProfileRepository;
@@ -13,12 +14,10 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
-import org.springframework.http.codec.multipart.FilePart;
+import org.springframework.data.relational.core.query.Criteria;
+import org.springframework.data.relational.core.query.Query;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.security.core.context.ReactiveSecurityContextHolder;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.kafka.sender.KafkaSender;
@@ -100,6 +99,18 @@ public class ProfileService {
                             .then(updatedProfileMono);
                 })
                 .then();
+    }
+
+    public Mono<List<UserInfo>> getBasicInfo(UserBasicInfoRequest request) {
+        Criteria criteria = Criteria.where("id").in(request.getUserId());
+        Query query = Query.query(criteria);
+
+        return r2dbcEntityTemplate.select(query, Profile.class)
+                .map(profile -> UserInfo.builder()
+                        .userId(profile.getId())
+                        .displayName(profile.getDisplayName())
+                        .build()
+                ).collectList();
     }
 
     public Mono<Void> deleteProfile(String id) {

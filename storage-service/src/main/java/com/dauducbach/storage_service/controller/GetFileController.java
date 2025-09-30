@@ -1,6 +1,7 @@
 package com.dauducbach.storage_service.controller;
 
 import com.dauducbach.storage_service.dto.request.GetFileRequest;
+import com.dauducbach.storage_service.entity.Media;
 import com.dauducbach.storage_service.service.GetFileService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -37,5 +38,10 @@ public class GetFileController {
     Mono<List<String>> getMedias(@RequestBody GetFileRequest request) {
         return getFileService.getFile(request)
                 .collectList();
+    }
+
+    @GetMapping("/all")
+    Mono<List<Media>> getAll() {
+        return getFileService.getAll();
     }
 }

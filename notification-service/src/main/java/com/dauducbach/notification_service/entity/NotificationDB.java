@@ -20,8 +20,9 @@ import java.time.Instant;
 public class NotificationDB {
     @Id
     String id;
-    String userId;  // email with email notification and userId with push notification
-    String actorId; // nullable
+    String userId;  // email with email notification and userId with push notification, nguoi nhan thong bao
+    String actorId; // nullable, nguoi tao ra su kien gay thong bao
+    String targetId;    // nguoi chiu ket qua cua su kien do actorId gay ra
     NotificationEvent notificationEvent;
     EntityType entityType;
     String entityId; // nullable

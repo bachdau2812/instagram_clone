@@ -1,5 +1,6 @@
 package com.dauducbach.notification_service.service;
 
+import com.dauducbach.event.ProfileCreationEvent;
 import com.dauducbach.notification_service.constant.EmailTypeConfig;
 import com.dauducbach.notification_service.constant.NotificationEvent;
 import com.dauducbach.notification_service.dto.request.EmailConfigRequest;
@@ -13,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
@@ -40,12 +43,13 @@ public class NotificationConfigService {
         return pushConfigRepository.findByUserId(userId);
     }
 
-    public Mono<Void> setConfigWhenUserCreate(String userId) {
+    @KafkaListener(topics = "profile_creation_event")
+    public Mono<Void> setConfigWhenUserCreate(@Payload ProfileCreationEvent event) {
         Mono<Void> setPush = Flux.fromIterable(Arrays.stream(NotificationEvent.values()).toList())
                 .flatMap(notificationEvent -> {
                     var pushConfig = PushConfig.builder()
                             .id(UUID.randomUUID().toString())
-                            .userId(userId)
+                            .userId(event.getUserId())
                             .isEnable(true)
                             .notificationEvent(notificationEvent)
                             .build();
@@ -58,7 +62,7 @@ public class NotificationConfigService {
                 .flatMap(emailTypeConfig -> {
                     var emailConfig = EmailConfig.builder()
                             .id(UUID.randomUUID().toString())
-                            .userId(userId)
+                            .userId(event.getUserId())
                             .isEnable(true)
                             .emailTypeConfig(emailTypeConfig)
                             .build();

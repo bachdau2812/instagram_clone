@@ -22,10 +22,10 @@ import reactor.core.publisher.Mono;
 public class NotificationConfigController {
     NotificationConfigService notificationConfigService;
 
-    @GetMapping("/set-all")
-    Mono<Void> setAll(@RequestParam String userId) {
-        return notificationConfigService.setConfigWhenUserCreate(userId);
-    }
+//    @GetMapping("/set-all")
+//    Mono<Void> setAll(@RequestParam String userId) {
+//        return notificationConfigService.setConfigWhenUserCreate(userId);
+//    }
 
     @PostMapping("/set-push")
     Mono<Void> setPush(@RequestBody PushConfigRequest request) {

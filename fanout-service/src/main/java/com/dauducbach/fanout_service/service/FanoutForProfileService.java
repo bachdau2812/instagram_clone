@@ -1,24 +1,26 @@
 package com.dauducbach.fanout_service.service;
 
-import com.dauducbach.event.ProfileCreationEvent;
-import com.dauducbach.event.ProfileEditEvent;
-import com.dauducbach.event.ProfileOperationEvent;
+import com.dauducbach.event.profile_operation.*;
 import com.dauducbach.fanout_service.dto.request.ProfileOperationRequest;
-import com.dauducbach.fanout_service.entity.ProfileIndex;
+import com.dauducbach.fanout_service.dto.request.UserBasicInfoRequest;
+import com.dauducbach.fanout_service.dto.response.UserInfo;
 import com.dauducbach.fanout_service.repository.ProfileIndexRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.kafka.sender.KafkaSender;
 import reactor.kafka.sender.SenderRecord;
 
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -28,147 +30,135 @@ import java.util.ArrayList;
 public class FanoutForProfileService {
     ProfileIndexRepository profileIndexRepository;
     KafkaSender<String, Object> kafkaSender;
+    private final WebClient webClient;
 
-    @KafkaListener(topics = "profile_creation_event")
-    public void createProfileIndex(@Payload ProfileCreationEvent event) {
-        var profileIndex = ProfileIndex.builder()
-                .id(event.getUserId())
-                .displayName(event.getDisplayName())
-                .city(event.getCity())
-                .job(event.getJob())
-                .followerList(new ArrayList<>())
-                .followerRequestList(new ArrayList<>())
-                .followingRequestList(new ArrayList<>())
-                .followingList(new ArrayList<>())
-                .blockList(new ArrayList<>())
-                .build();
-
-        profileIndexRepository.save(profileIndex).subscribe();
-    }
-
-    @KafkaListener(topics = "profile_edit_event")
-    public void editProfileIndex(@Payload ProfileEditEvent event) {
-        profileIndexRepository.findById(event.getProfileId())
-                .flatMap(profileIndex -> switch (event.getFieldName()) {
-                    case "displayName" -> {
-                        profileIndex.setDisplayName(event.getValue());
-                        yield profileIndexRepository.save(profileIndex);
-                    }
-                    case "city" -> {
-                        profileIndex.setCity(event.getValue());
-                        yield profileIndexRepository.save(profileIndex);
-                    }
-                    case "job" -> {
-                        profileIndex.setJob(event.getValue());
-                        yield profileIndexRepository.save(profileIndex);
-                    }
-                    case "sex" -> {
-                        profileIndex.setSex(event.getValue());
-                        yield profileIndexRepository.save(profileIndex);
-                    }
-                    case "bio" -> {
-                        profileIndex.setBio(event.getValue());
-                        yield profileIndexRepository.save(profileIndex);
-                    }
-                    default -> Mono.empty();
-                })
-                .subscribe();
-    }
-
+    // Start Saga
     public Mono<Void> profileOperationHandle(ProfileOperationRequest request) {
-        var event = ProfileOperationEvent.builder()
-                .type(request.getType())
-                .sourceId(request.getSourceId())
-                .targetId(request.getTargetId())
-                .build();
+        log.info("Start Follow Saga");
+        var profileCommand = new ProfileOperationCommand(request.getType(), request.getSourceId(), request.getTargetId());
 
-        ProducerRecord<String, Object> producerRecord = new ProducerRecord<>("profile_operation_event", event);
+        ProducerRecord<String, Object> producerRecord = new ProducerRecord<>("profile_user_connect", profileCommand);
         SenderRecord<String, Object, String> senderRecord = SenderRecord.create(producerRecord, "profile operator");
 
         return kafkaSender.send(Mono.just(senderRecord))
                 .then();
     }
 
-    @KafkaListener(topics = "profile_operation_event")
-    public void listenOperation(@Payload ProfileOperationEvent event) {
-        switch (event.getType()){
-            case SEND_FOLLOW_REQUEST -> sendFollowRequest(event).subscribe();
-            case ACCEPT_FOLLOW_REQUEST -> acceptFollowRequest(event).subscribe();
-            case UNFOLLOW_REQUEST -> unfollowRequest(event).subscribe();
-            case BLOCK_REQUEST -> blockRequest(event).subscribe();
-            case UNBLOCK_REQUEST -> unblockRequest(event).subscribe();
-        }
+    @KafkaListener(topics = "profile_user_connect_success", groupId = "orchestrator")
+    public void saveToProfileServiceComplete(@Payload ProfileOperationSuccessEvent event) {
+        log.info("Save to Profile Service complete");
+        var profileIndexUserConnectCommand = new ProfileIndexUserConnectCommand(
+                event.type(),
+                event.sourceId(),
+                event.targetId()
+        );
+
+        ProducerRecord<String, Object> producerRecord = new ProducerRecord<>("profile_index_user_connect", profileIndexUserConnectCommand);
+        SenderRecord<String, Object, String> senderRecord = SenderRecord.create(producerRecord, "profile operator");
+
+        kafkaSender.send(Mono.just(senderRecord)).subscribe();
     }
 
-    public Mono<Void> sendFollowRequest(ProfileOperationEvent event) {
-        return profileIndexRepository.findById(event.getSourceId())
-                .flatMap(sourceProfile -> {
-                    sourceProfile.getFollowingRequestList().add(event.getTargetId());
+    @KafkaListener(topics = "profile_index_user_connect_success", groupId = "orchestrator")
+    public void sendNotification(@Payload ProfileIndexUserConnectSuccessEvent event) {
+        log.info("Save to Profile Index complete");
+        Mono<UserInfo> sourceInfo = webClient.post()
+                .uri("http://localhost:8081/profile/get-basic-info")
+                .bodyValue(UserBasicInfoRequest.builder()
+                        .userId(List.of(event.sourceId()))
+                        .build()
+                )
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<UserInfo>>() {})
+                .map(List::getFirst);
 
-                    return profileIndexRepository.findById(event.getSourceId())
-                            .flatMap(targetProfile -> {
-                                targetProfile.getFollowerList().add(event.getTargetId());
+        Mono<UserInfo> targetInfo = webClient.post()
+                .uri("http://localhost:8081/profile/get-basic-info")
+                .bodyValue(UserBasicInfoRequest.builder()
+                        .userId(List.of(event.targetId()))
+                        .build()
+                )
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<UserInfo>>() {})
+                .map(List::getFirst);
 
-                                return profileIndexRepository.save(targetProfile);
-                            })
-                            .then(profileIndexRepository.save(sourceProfile));
-                })
-                .then();
+        Mono<String> sourceAvatarUrl = webClient.get()
+                .uri("http://localhost:8084/storage/get/avt-feed?ownerId=" + event.sourceId())
+                .retrieve()
+                .bodyToMono(String.class);
+
+        Mono.zip(
+                sourceInfo,
+                targetInfo,
+                sourceAvatarUrl
+        ).flatMap(tuples -> {
+            UserInfo sInfo = tuples.getT1();
+            UserInfo tInfo = tuples.getT2();
+            String sAvtUrl = tuples.getT3();
+
+            var command = new NotificationUserConnectCommand(
+                    event.type(),
+                    sInfo,
+                    tInfo,
+                    sAvtUrl,
+                    new HashMap<>()
+            );
+
+            ProducerRecord<String, Object> producerRecord = new ProducerRecord<>("notification_user_connect", command);
+            SenderRecord<String, Object, String> senderRecord = SenderRecord.create(producerRecord, "profile operator");
+
+            return kafkaSender.send(Mono.just(senderRecord))
+                    .then(Mono.fromRunnable(() ->
+                            log.info("Sent notification_user_connect event: {}", command)
+                    ));
+        }).subscribe();
     }
 
-    public Mono<Void> acceptFollowRequest(ProfileOperationEvent event) {
-        return profileIndexRepository.findById(event.getSourceId())
-                .flatMap(sourceProfile -> {
-                    sourceProfile.getFollowerRequestList().remove(event.getTargetId());
-                    sourceProfile.getFollowerList().add(event.getTargetId());
+    // ============ COMPENSATION ============
 
-                    return profileIndexRepository.findById(event.getTargetId())
-                            .flatMap(targetProfile -> {
-                                targetProfile.getFollowingRequestList().remove(event.getSourceId());
-                                targetProfile.getFollowingList().add(event.getSourceId());
-
-                                return profileIndexRepository.save(targetProfile);
-                            })
-                            .then(profileIndexRepository.save(sourceProfile));
-                })
-                .then();
+    @KafkaListener(topics = "profile_user_connect_fail", groupId = "orchestrator")
+    public void saveToProfileServiceFail(@Payload ProfileOperationFailEvent event) {
+        Mono.defer(() -> Mono.error(new RuntimeException("Follow fail"))).subscribe();
     }
 
-    public Mono<Void> unfollowRequest(ProfileOperationEvent event) {
-        return profileIndexRepository.findById(event.getSourceId())
-                .flatMap(sourceProfile -> {
-                    sourceProfile.getFollowingList().remove(event.getTargetId());
+    @KafkaListener(topics = "profile_index_user_connect_fail", groupId = "orchestrator")
+    public void rollBackSaveToProfileService(@Payload ProfileIndexUserConnectFailEvent event) {
+        var profileUserConnectCommand = new ProfileOperationCommand(
+                event.type(),
+                event.sourceId(),
+                event.targetId()
+        );
 
-                    return profileIndexRepository.findById(event.getTargetId())
-                            .flatMap(targetProfile -> {
-                                targetProfile.getFollowerList().remove(event.getSourceId());
+        ProducerRecord<String, Object> producerRecord = new ProducerRecord<>("rollback_profile_user_connect", profileUserConnectCommand);
+        SenderRecord<String, Object, String> senderRecord = SenderRecord.create(producerRecord, "profile operator");
 
-                                return profileIndexRepository.save(targetProfile);
-                            })
-                            .then(profileIndexRepository.save(sourceProfile));
-                })
-                .then();
+        kafkaSender.send(Mono.just(senderRecord))
+                .then(Mono.defer(() -> Mono.error(new RuntimeException("Follow fail"))))
+                .subscribe();
     }
 
-    public Mono<Void> blockRequest(ProfileOperationEvent event) {
-        return profileIndexRepository.findById(event.getSourceId())
-                .flatMap(sourceProfile -> {
-                    sourceProfile.getBlockList().add(event.getTargetId());
+    @KafkaListener(topics = "notification_user_connect_fail")
+    public void rollbackSaveProfileIndexAndProfileService(@Payload NotificationUserConnectFailEvent event) {
+        var profileUserConnectCommand = new ProfileOperationCommand(
+                event.type(),
+                event.sourceId(),
+                event.targetId()
+        );
 
-                    return profileIndexRepository.save(sourceProfile);
-                })
-                .then();
+        var profileIndexUserConnectCommand = new ProfileIndexUserConnectCommand(
+                event.type(),
+                event.sourceId(),
+                event.targetId()
+        );
+
+        ProducerRecord<String, Object> producerRecord = new ProducerRecord<>("rollback_profile_user_connect", profileUserConnectCommand);
+        SenderRecord<String, Object, String> senderRecord = SenderRecord.create(producerRecord, "profile operator");
+
+        ProducerRecord<String, Object> producerRecord2 = new ProducerRecord<>("rollback_profile_index_user_connect", profileIndexUserConnectCommand);
+        SenderRecord<String, Object, String> senderRecord2 = SenderRecord.create(producerRecord, "profile operator");
+
+        Mono.when(
+                kafkaSender.send(Mono.just(senderRecord2)), kafkaSender.send(Mono.just(senderRecord))
+        ).subscribe();
     }
-
-    public Mono<Void> unblockRequest(ProfileOperationEvent event) {
-        return profileIndexRepository.findById(event.getSourceId())
-                .flatMap(sourceProfile -> {
-                    sourceProfile.getBlockList().remove(event.getTargetId());
-
-                    return profileIndexRepository.save(sourceProfile);
-                })
-                .then();
-    }
-
-
 }

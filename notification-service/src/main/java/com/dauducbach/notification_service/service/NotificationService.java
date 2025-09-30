@@ -115,7 +115,8 @@ public class NotificationService {
                         userPushTokenRepository.findByUserId(userInfo.getUserId())
                                 .map(UserPushToken::getDeviceToken)
                         .flatMap(token -> {
-
+                            log.info("{}", userInfo);
+                            log.info("Device Token: {}", token);
                             Notification notification = Notification.builder()
                                     .setTitle(request.getTitle())
                                     .setBody(request.getBody())
@@ -141,10 +142,11 @@ public class NotificationService {
                                     .imageUrl(request.getImageUrl())
                                     .build();
 
-                            return Mono.fromCallable(() -> FirebaseMessaging.getInstance().sendAsync(message))
+                            return Mono.fromCallable(() -> FirebaseMessaging.getInstance().send(message))
                                     .then(r2dbcEntityTemplate.insert(NotificationDB.class).using(notificationDB));
                         })
                 )
+                .doOnError(err -> Mono.error(new RuntimeException(err.getMessage())))
                 .then(Mono.just("Send Complete"));
     }
 

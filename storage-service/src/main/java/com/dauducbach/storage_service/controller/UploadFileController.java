@@ -21,11 +21,11 @@ public class UploadFileController {
     UploadFileService uploadFileService;
 
     @PostMapping(value = "/upload-media", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    Mono<List<String>> uploadMedia(@RequestPart List<FilePart> files,@RequestPart String ownerId, @RequestPart boolean isAvatar) {
+    Mono<List<String>> uploadMedia(@RequestPart List<FilePart> files,@RequestPart String ownerId, @RequestPart String isAvatar) {
         var uploadFileRequest = UploadFileRequest.builder()
                 .owner(ownerId)
                 .medias(files)
-                .isAvatar(isAvatar)
+                .isAvatar(isAvatar.equals("true"))
                 .build();
 
         return uploadFileService.uploadMedia(uploadFileRequest);

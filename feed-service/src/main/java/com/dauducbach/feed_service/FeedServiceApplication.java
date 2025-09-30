@@ -1,13 +1,13 @@
-package com.dauducbach.post_service;
+package com.dauducbach.feed_service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class PostServiceApplication {
+public class FeedServiceApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(PostServiceApplication.class, args);
+		SpringApplication.run(FeedServiceApplication.class, args);
 	}
 
 }

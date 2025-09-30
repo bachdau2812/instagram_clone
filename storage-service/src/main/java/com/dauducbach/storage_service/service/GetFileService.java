@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -145,5 +147,10 @@ public class GetFileService {
         Query query = Query.query(criteria);
 
         return r2dbcEntityTemplate.select(query, Media.class);
+    }
+
+    public Mono<List<Media>> getAll() {
+        return mediaRepository.findAll()
+                .collectList();
     }
 }

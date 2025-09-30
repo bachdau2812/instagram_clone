@@ -39,7 +39,7 @@ public class SecurityConfig {
     private String SIGNED_KEY;
 
     public final String[] PUBLIC_ENDPOINT = {
-            "/get"
+            "/get/**"
     };
 
     @Bean

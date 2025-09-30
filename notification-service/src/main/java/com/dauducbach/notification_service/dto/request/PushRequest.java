@@ -16,6 +16,7 @@ import java.util.Map;
 
 public class PushRequest {
     UserInfo actorInfo;
+    UserInfo targetInfo;
     List<UserInfo> recipientInfo;     // userId, displayName
     String title;
     String body;
