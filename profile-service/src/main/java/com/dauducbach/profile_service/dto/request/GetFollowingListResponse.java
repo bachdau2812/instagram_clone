@@ -1,0 +1,17 @@
+package com.dauducbach.profile_service.dto.request;
+
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
+import java.util.List;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Builder
+
+public class GetFollowingListResponse {
+    String userId;
+    List<FollowItemResponse> followingList;
+}

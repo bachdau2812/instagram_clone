@@ -41,7 +41,8 @@ public class SecurityConfig {
     private String SIGNED_KEY;
 
     public final String[] PUBLIC_ENDPOINT = {
-            "/get-basic-info"
+            "/get-basic-info",
+            "/get-like-info"
     };
 
     @Bean

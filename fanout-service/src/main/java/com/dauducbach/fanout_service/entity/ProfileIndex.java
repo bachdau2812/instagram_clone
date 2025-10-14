@@ -50,4 +50,6 @@ public class ProfileIndex {
 
     @Field(type = FieldType.Text)
     String bio;
+
+    List<Float> embedding;
 }

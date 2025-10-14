@@ -1,8 +1,8 @@
 package com.dauducbach.notification_service.service;
 
 import com.dauducbach.event.profile_operation.NotificationUserConnectCommand;
-import com.dauducbach.event.profile_operation.NotificationUserConnectFailEvent;
 import com.dauducbach.event.profile_operation.NotificationUserConnectSuccessEvent;
+import com.dauducbach.event.profile_operation.ProfileOperationRollback;
 import com.dauducbach.notification_service.constant.NotificationEvent;
 import com.dauducbach.notification_service.dto.request.PushRequest;
 import com.dauducbach.notification_service.repository.PushConfigRepository;
@@ -30,7 +30,7 @@ public class NotificationForProfileService {
     PushConfigRepository pushConfigRepository;
     KafkaSender<String, Object> kafkaSender;
 
-    @KafkaListener(topics = "notification_user_connect")
+    @KafkaListener(topics = "notification_profile_operation_command")
     public void profileOperatorHandle(@Payload NotificationUserConnectCommand command) {
         log.info("Send Notification for Follow: {}", command);
 
@@ -55,14 +55,14 @@ public class NotificationForProfileService {
                         .onErrorResume(err -> {
                             log.info("Send fail: {}", err.getMessage());
 
-                            var failEvent = new NotificationUserConnectFailEvent(
+                            var failEvent = new ProfileOperationRollback(
                                     command.type(),
                                     command.actorInfo().getUserId(),
                                     command.targetInfo().getUserId()
                             );
 
                             ProducerRecord<String, Object> record =
-                                    new ProducerRecord<>("notification_user_connect_fail", failEvent);
+                                    new ProducerRecord<>("notification_profile_operation_fail_event", failEvent);
                             SenderRecord<String, Object, String> senderRecord =
                                     SenderRecord.create(record, "profile operator");
 
@@ -79,7 +79,7 @@ public class NotificationForProfileService {
                             );
 
                             ProducerRecord<String, Object> record =
-                                    new ProducerRecord<>("notification_user_connect_success", successEvent);
+                                    new ProducerRecord<>("notification_profile_operation_success_event", successEvent);
                             SenderRecord<String, Object, String> senderRecord =
                                     SenderRecord.create(record, "profile operator");
 

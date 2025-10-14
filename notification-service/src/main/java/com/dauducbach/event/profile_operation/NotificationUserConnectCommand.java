@@ -12,4 +12,6 @@ public record NotificationUserConnectCommand(
         UserInfo targetInfo,
         String actorAvatarUrl,
         Map<String, String> data
-) {}
+) {
+
+}

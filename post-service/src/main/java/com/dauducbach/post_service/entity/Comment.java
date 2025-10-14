@@ -22,8 +22,6 @@ public class Comment {
     String userId;
     String content;
     String parentId;
-    int likeCount;
-
     @JsonFormat(shape = JsonFormat.Shape.NUMBER)
     Instant createAt;
 

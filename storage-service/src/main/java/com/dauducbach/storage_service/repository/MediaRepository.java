@@ -10,4 +10,6 @@ public interface MediaRepository extends ReactiveCrudRepository<Media, String> {
     Mono<Void> deleteByPublicId(String publicId);
 
     Mono<Media> findByOwnerId(String ownerId);
+
+    Mono<Media> findByDisplayName(String displayName);
 }

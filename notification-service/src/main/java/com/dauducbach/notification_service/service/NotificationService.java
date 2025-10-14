@@ -120,7 +120,6 @@ public class NotificationService {
                             Notification notification = Notification.builder()
                                     .setTitle(request.getTitle())
                                     .setBody(request.getBody())
-                                    .setImage(request.getImageUrl())
                                     .build();
 
                             Message message = Message.builder()
@@ -146,7 +145,7 @@ public class NotificationService {
                                     .then(r2dbcEntityTemplate.insert(NotificationDB.class).using(notificationDB));
                         })
                 )
-                .doOnError(err -> Mono.error(new RuntimeException(err.getMessage())))
+                .doOnError(err -> log.info("Error send push notification: {}", err.getMessage()))
                 .then(Mono.just("Send Complete"));
     }
 
@@ -169,5 +168,9 @@ public class NotificationService {
                 .build();
         return r2dbcEntityTemplate.insert(NotificationTemplate.class).using(template)
                 .then();
+    }
+
+    public Flux<NotificationDB> getNotificationOfUser(String userId) {
+        return notificationRepository.findAllByUserId(userId);
     }
 }

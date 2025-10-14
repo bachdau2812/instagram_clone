@@ -1,6 +1,9 @@
 package com.dauducbach.notification_service.controller;
 
+import com.dauducbach.notification_service.dto.request.AddUserPushTokenRequest;
 import com.dauducbach.notification_service.dto.request.EmailRequest;
+import com.dauducbach.notification_service.dto.request.TemplateRequest;
+import com.dauducbach.notification_service.entity.NotificationDB;
 import com.dauducbach.notification_service.service.NotificationService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -8,9 +11,8 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.multipart.FilePart;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
@@ -47,5 +49,20 @@ public class NotificationController {
         request.setAttachments(Objects.requireNonNullElseGet(attachments, ArrayList::new));
 
         return notificationService.sendEmail(request);
+    }
+
+    @PostMapping("/add-token")
+    Mono<Void> addToken (@RequestBody AddUserPushTokenRequest request) {
+        return notificationService.addTokenDevice(request);
+    }
+
+    @GetMapping("/get-notification")
+    Flux<NotificationDB> getNotification(@RequestParam String userId) {
+        return notificationService.getNotificationOfUser(userId);
+    }
+
+    @PostMapping("/create-template")
+    Mono<Void> createTemplate(@RequestBody TemplateRequest request) {
+        return notificationService.createTemplate(request);
     }
 }

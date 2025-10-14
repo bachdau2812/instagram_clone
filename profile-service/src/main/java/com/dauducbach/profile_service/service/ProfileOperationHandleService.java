@@ -1,8 +1,8 @@
 package com.dauducbach.profile_service.service;
 
-import com.dauducbach.event.profile_operation.ProfileOperationFailEvent;
-import com.dauducbach.event.profile_operation.ProfileOperationSuccessEvent;
 import com.dauducbach.event.profile_operation.ProfileOperationCommand;
+import com.dauducbach.event.profile_operation.ProfileOperationRollback;
+import com.dauducbach.event.profile_operation.ProfileOperationSuccessEvent;
 import com.dauducbach.profile_service.entity.Block;
 import com.dauducbach.profile_service.entity.Follow;
 import com.dauducbach.profile_service.repository.BlockRepository;
@@ -33,7 +33,7 @@ public class ProfileOperationHandleService {
     BlockRepository blockRepository;
     KafkaSender<String, Object> kafkaSender;
 
-    @KafkaListener(topics = "profile_user_connect")
+    @KafkaListener(topics = "profile_operation_command")
     public void profileOperationHandle(@Payload ProfileOperationCommand command) {
         log.info("Process operation");
         Mono.defer(() -> {
@@ -68,13 +68,13 @@ public class ProfileOperationHandleService {
 
                     log.info("Operation complete");
 
-                    ProducerRecord<String, Object> producer = new ProducerRecord<>("profile_user_connect_success", successEvent);
+                    ProducerRecord<String, Object> producer = new ProducerRecord<>("profile_operation_success_event", successEvent);
                     SenderRecord<String, Object, String> senderRecord = SenderRecord.create(producer, "Complete");
                     return kafkaSender.send(Mono.just(senderRecord)).then();
                 })
                 .onErrorResume(err -> {
                     // Event lỗi cho Saga
-                    var failEvent = new ProfileOperationFailEvent(
+                    var failEvent = new ProfileOperationRollback(
                             command.type(),
                             command.sourceId(),
                             command.targetId()
@@ -82,23 +82,23 @@ public class ProfileOperationHandleService {
 
                     log.info("Operation fail: {}", err.getMessage());
 
-                    ProducerRecord<String, Object> producer = new ProducerRecord<>("profile_user_connect_fail", failEvent);
+                    ProducerRecord<String, Object> producer = new ProducerRecord<>("profile_operation_fail_event", failEvent);
                     SenderRecord<String, Object, String> senderRecord = SenderRecord.create(producer, "Complete");
                     return kafkaSender.send(Mono.just(senderRecord)).then();
                 })
                 .subscribe();
     }
 
-    public Mono<String> sendFollowRequest(ProfileOperationCommand record){
-        return followRepository.existsByFollowerIdAndFollowingId(record.targetId(), record.sourceId())
+    public Mono<String> sendFollowRequest(ProfileOperationCommand command){
+        return followRepository.existsByFollowerIdAndFollowingId(command.targetId(), command.sourceId())
                         .flatMap(isExists -> {
                             if (isExists) {
                                 return Mono.error(new RuntimeException("Exists request"));
                             }
 
                             var follow = Follow.builder()
-                                    .followerId(record.sourceId())
-                                    .followingId(record.targetId())
+                                    .followerId(command.sourceId())
+                                    .followingId(command.targetId())
                                     .createAt(Instant.now())
                                     .status("PENDING")
                                     .build();
@@ -140,5 +140,53 @@ public class ProfileOperationHandleService {
         return blockRepository.deleteByBlockerIdAndBlockingId(event.sourceId(), event.targetId())
                 .onErrorResume(throwable -> Mono.error(new RuntimeException("Error: " + throwable.getMessage())))
                 .then(Mono.just("Complete"));
+    }
+
+    @KafkaListener(topics = "rollback_profile_operation")
+    public void rollback(@Payload ProfileOperationRollback op) {
+        log.info("Rollback operation: {}", op.type());
+
+        Mono<Void> rollback = switch (op.type()) {
+            case SEND_FOLLOW_REQUEST -> followRepository
+                    .deleteByFollowerIdAndFollowingId(op.sourceId(), op.targetId())
+                    .then();
+
+            case ACCEPT_FOLLOW_REQUEST -> followRepository
+                    .findByFollowerIdAndFollowingId(op.targetId(), op.sourceId())
+                    .flatMap(follow -> {
+                        follow.setStatus("PENDING");
+                        return followRepository.save(follow);
+                    })
+                    .then();
+
+            case UNFOLLOW_REQUEST -> {
+                var follow = Follow.builder()
+                        .followerId(op.sourceId())
+                        .followingId(op.targetId())
+                        .createAt(Instant.now())
+                        .status("CONFIRM")
+                        .build();
+                yield r2dbcEntityTemplate.insert(Follow.class).using(follow).then();
+            }
+
+            case BLOCK_REQUEST -> blockRepository
+                    .deleteByBlockerIdAndBlockingId(op.sourceId(), op.targetId())
+                    .then();
+
+            case UNBLOCK_REQUEST -> {
+                var block = Block.builder()
+                        .blockerId(op.sourceId())
+                        .blockingId(op.targetId())
+                        .build();
+                yield r2dbcEntityTemplate.insert(Block.class).using(block).then();
+            }
+
+            default -> Mono.empty();
+        };
+
+        rollback
+                .doOnSuccess(v -> log.info("Rollback {} completed", op.type()))
+                .doOnError(err -> log.error("Rollback {} failed: {}", op.type(), err.getMessage()))
+                .subscribe();
     }
 }

@@ -40,6 +40,11 @@ public class GetFileController {
                 .collectList();
     }
 
+    @GetMapping("/audio")
+    Mono<String> getAudio(@RequestParam String displayName) {
+        return getFileService.getMediaByDisplayName(displayName);
+    }
+
     @GetMapping("/all")
     Mono<List<Media>> getAll() {
         return getFileService.getAll();

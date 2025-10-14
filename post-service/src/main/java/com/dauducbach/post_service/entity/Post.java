@@ -20,8 +20,6 @@ public class Post {
     String id;
     String userId;
     String content;
-    int commentCount;
-    int likeCount;
 
     @JsonFormat(shape = JsonFormat.Shape.NUMBER)
     Instant createAt;

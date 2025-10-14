@@ -34,5 +34,6 @@ public class Media {
     String ownerId;
     String version;
     String versionId;
+    String displayName;     // Danh cho audio(story)
     boolean isAvatar;
 }

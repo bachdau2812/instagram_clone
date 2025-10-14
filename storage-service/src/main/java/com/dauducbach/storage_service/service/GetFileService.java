@@ -142,6 +142,12 @@ public class GetFileService {
                 });
     }
 
+    public Mono<String> getMediaByDisplayName(String displayName) {
+        log.info("Display name: {}", displayName);
+        return mediaRepository.findByDisplayName(displayName)
+                .map(Media::getSecureUrl);
+    }
+
     public Flux<Media> findAllByOwnerId(String ownerId) {
         Criteria criteria = Criteria.where("owner_id").is(ownerId);
         Query query = Query.query(criteria);

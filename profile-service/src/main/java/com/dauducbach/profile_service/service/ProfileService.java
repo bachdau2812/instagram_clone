@@ -5,6 +5,7 @@ import com.dauducbach.event.ProfileEditEvent;
 import com.dauducbach.profile_service.dto.response.UserInfo;
 import com.dauducbach.profile_service.dto.request.ProfileEditRequest;
 import com.dauducbach.profile_service.dto.request.UserBasicInfoRequest;
+import com.dauducbach.profile_service.dto.response.UserInfoLikeResponse;
 import com.dauducbach.profile_service.entity.Profile;
 import com.dauducbach.profile_service.mapper.ProfileMapper;
 import com.dauducbach.profile_service.repository.ProfileRepository;
@@ -108,6 +109,19 @@ public class ProfileService {
         return r2dbcEntityTemplate.select(query, Profile.class)
                 .map(profile -> UserInfo.builder()
                         .userId(profile.getId())
+                        .displayName(profile.getDisplayName())
+                        .build()
+                ).collectList();
+    }
+
+    public Mono<List<UserInfoLikeResponse>> getInfoLikeResponse(UserBasicInfoRequest request) {
+        Criteria criteria = Criteria.where("id").in(request.getUserId());
+        Query query = Query.query(criteria);
+
+        return r2dbcEntityTemplate.select(query, Profile.class)
+                .map(profile -> UserInfoLikeResponse.builder()
+                        .userId(profile.getId())
+                        .username(profile.getUsername())
                         .displayName(profile.getDisplayName())
                         .build()
                 ).collectList();

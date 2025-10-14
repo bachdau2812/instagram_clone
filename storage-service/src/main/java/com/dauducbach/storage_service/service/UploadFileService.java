@@ -25,6 +25,7 @@ import reactor.core.scheduler.Schedulers;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.Normalizer;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -49,6 +50,7 @@ public class UploadFileService {
                                         .then(Mono.defer(() -> {
                                             try {
                                                 String suffix = getFileSuffix(filePart);
+                                                String fileName = filePart.filename().substring(0, filePart.filename().indexOf("."));
                                                 Map map = null;
 
                                                 if (suffix.equals("jpg") || suffix.equals("jpeg") || suffix.equals("png") ||
@@ -73,6 +75,13 @@ public class UploadFileService {
                                                             "eager_async", true
 //                                                            "eager_notification_url", "https://mysite.example.com/notify_endpoint"
                                                     );
+                                                } else if (suffix.equals("mp3") || suffix.equals("m4a")) {
+
+                                                    map = Map.of(
+                                                            "resource_type", "video",
+                                                            "folder", "instagram",
+                                                            "public_id", normalizeFileName(fileName)
+                                                    );
                                                 }
 
                                                 Map uploadResult = cloudinary.uploader().upload(tempFile, map);
@@ -93,6 +102,7 @@ public class UploadFileService {
                                                         .ownerId(request.getOwner())
                                                         .version(String.valueOf(uploadResult.get("version")))
                                                         .versionId((String) uploadResult.get("version_id"))
+                                                        .displayName(fileName)
                                                         .isAvatar(request.isAvatar())
                                                         .build();
 
@@ -115,6 +125,12 @@ public class UploadFileService {
             return filename.substring(dotIndex + 1).toLowerCase();
         }
         return "";
+    }
+
+    private String normalizeFileName(String name) {
+        return Normalizer.normalize(name, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")   // bỏ dấu tiếng Việt
+                .replaceAll("[^a-zA-Z0-9-_]", "_"); // thay ký tự đặc biệt bằng _
     }
 
     public Mono<Void> deleteMedia(DeleteMediaRequest request) {
@@ -147,5 +163,15 @@ public class UploadFileService {
         Query query = Query.query(criteria);
 
         return r2dbcEntityTemplate.select(query, Media.class);
+    }
+
+    public Mono<Void> deleteByOwnerId(String ownerId) {
+        return r2dbcEntityTemplate.select(
+                Query.query(Criteria.where("owner_id").is(ownerId)),
+                Media.class
+        )
+                .map(Media::getPublicId)
+                .collectList()
+                .flatMap(publicIds -> deleteMedia(DeleteMediaRequest.builder().publicIds(publicIds).build()));
     }
 }

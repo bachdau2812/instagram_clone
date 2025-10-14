@@ -6,9 +6,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface FollowRepository extends ReactiveCrudRepository<Follow, String> {
-    Flux<Follow> findByFollowerId(String followerId);
+    Flux<Follow> findAllByFollowerId(String followerId);
 
-    Flux<Follow> findByFollowingId(String followingId);
+    Flux<Follow> findAllByFollowingId(String followingId);
 
     Mono<Follow> findByFollowerIdAndFollowingId(String followerId, String followingId);
 

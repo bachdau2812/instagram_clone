@@ -20,8 +20,6 @@ public class Like {
     String id;
     String targetId;
     String userId;
-    String type;    // comment, post
-
     @JsonFormat(shape = JsonFormat.Shape.NUMBER)
     Instant timestamp;
 }

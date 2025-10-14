@@ -25,15 +25,14 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
     consumer:
-      group-id: profile-service-group
+      group-id: post-service-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
         spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
-        spring.json.trusted.packages: "com.dauducbach.event.**"
-        spring.json.value.default.type: java.util.HashMap
+        spring.json.trusted.packages: "*"
         spring.json.add.type.headers: false
 jwt:
   signerKey: ${JWT_SIGNER_KEY}
