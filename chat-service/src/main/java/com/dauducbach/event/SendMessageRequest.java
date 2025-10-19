@@ -1,0 +1,17 @@
+package com.dauducbach.event;
+
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Builder
+
+public class SendMessageRequest {
+    String recipientId;     // Danh cho lan dau tien nhan tin neu ma inboxId chua ton tai
+    String content;
+    String senderId;
+    String inboxId;
+}

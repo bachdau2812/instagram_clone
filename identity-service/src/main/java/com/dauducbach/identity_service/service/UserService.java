@@ -183,6 +183,7 @@ public class UserService {
                     if (code == null) {
                         return Mono.error(new AppException(ErrorCode.TIMEOUT));
                     }
+                    log.info("Code: {}", code);
 
                     if (!code.equals(request.getCode())) {
                         return Mono.error(new AppException(ErrorCode.INVALID_VERIFICATION_CODE));
@@ -201,6 +202,7 @@ public class UserService {
                                 user.setPassword(passwordEncoder.encode(newPassword));
                                 return kafkaSender.send(Mono.just(senderRecord))
                                         .then(userRepository.save(user))
+                                        .doOnSuccess(user1 -> log.info("Sen password complete"))
                                         .onErrorResume(throwable -> Mono.error(new AppException(ErrorCode.SEND_PASSWORD_FAILED)))
                                         .then(Mono.just("Mat khau moi da duoc gui den hop thu email, nhap mat khau moi de dang nhap"));
                             });

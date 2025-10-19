@@ -9,8 +9,10 @@
         <outputRelativeToContentRoot value="true" />
         <module name="post-service" />
         <module name="feed-service" />
+        <module name="search-service" />
         <module name="api-gateway" />
         <module name="profile-service" />
+        <module name="chat-service" />
         <module name="storage-service" />
         <module name="identity-service" />
         <module name="fanout-service" />
@@ -21,12 +23,14 @@
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="api-gateway" options="-parameters" />
+      <module name="chat-service" options="-parameters" />
       <module name="fanout-service" options="-parameters" />
       <module name="feed-service" options="-parameters" />
       <module name="identity-service" options="-parameters" />
       <module name="notification-service" options="-parameters" />
       <module name="post-service" options="-parameters" />
       <module name="profile-service" options="-parameters" />
+      <module name="search-service" options="-parameters" />
       <module name="storage-service" options="-parameters" />
     </option>
   </component>

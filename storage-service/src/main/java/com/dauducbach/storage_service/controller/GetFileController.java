@@ -1,6 +1,8 @@
 package com.dauducbach.storage_service.controller;
 
+import com.dauducbach.storage_service.dto.request.GetAvatarRequest;
 import com.dauducbach.storage_service.dto.request.GetFileRequest;
+import com.dauducbach.storage_service.dto.response.GetAvatarResponse;
 import com.dauducbach.storage_service.entity.Media;
 import com.dauducbach.storage_service.service.GetFileService;
 import lombok.AccessLevel;
@@ -48,5 +50,10 @@ public class GetFileController {
     @GetMapping("/all")
     Mono<List<Media>> getAll() {
         return getFileService.getAll();
+    }
+
+    @PostMapping("/list-avt")
+    Mono<GetAvatarResponse> getListAvatar(@RequestBody GetAvatarRequest request) {
+        return getFileService.getAvatarOfListUser(request);
     }
 }

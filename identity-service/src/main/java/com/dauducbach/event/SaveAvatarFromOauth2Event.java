@@ -9,5 +9,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SaveAvatarFromOauth2Event {
-    String content;
+    String ownerId;
+    String avatarUrl;
+    boolean isAvt;
 }

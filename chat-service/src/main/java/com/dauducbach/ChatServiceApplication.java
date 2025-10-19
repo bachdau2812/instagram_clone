@@ -1,4 +1,4 @@
-package com.dauducbach.chat_service;
+package com.dauducbach;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

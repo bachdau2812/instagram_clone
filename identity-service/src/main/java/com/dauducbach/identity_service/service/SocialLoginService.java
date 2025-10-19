@@ -36,6 +36,7 @@ import java.util.UUID;
 @Slf4j
 
 public class SocialLoginService extends DefaultReactiveOAuth2UserService {
+    static int count = 0;
     R2dbcEntityTemplate r2dbcEntityTemplate;
     UserRepository userRepository;
     KafkaSender<String, Object> kafkaSender;
@@ -173,7 +174,8 @@ public class SocialLoginService extends DefaultReactiveOAuth2UserService {
 
     private String generateUsername(String email) {
         if (email != null && email.contains("@")) {
-            return email.substring(0, email.indexOf("@"));
+            count ++;
+            return email.substring(0, email.indexOf("@")) + count;
         }
         return "user_" + UUID.randomUUID().toString().substring(0, 8);
     }

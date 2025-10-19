@@ -1,7 +1,9 @@
-package com.dauducbach.notification_service.dto.response;
+package com.dauducbach.notification_service.dto.request;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -9,6 +11,6 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 
-public class NotificationResponse {
-
+public class GetAvatarRequest {
+    List<String> userIds;
 }

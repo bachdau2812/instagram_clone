@@ -3,7 +3,9 @@ package com.dauducbach.storage_service.service;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.Transformation;
 import com.dauducbach.storage_service.constant.MediaVariant;
+import com.dauducbach.storage_service.dto.request.GetAvatarRequest;
 import com.dauducbach.storage_service.dto.request.GetFileRequest;
+import com.dauducbach.storage_service.dto.response.GetAvatarResponse;
 import com.dauducbach.storage_service.entity.Media;
 import com.dauducbach.storage_service.repository.MediaRepository;
 import lombok.AccessLevel;
@@ -158,5 +160,15 @@ public class GetFileService {
     public Mono<List<Media>> getAll() {
         return mediaRepository.findAll()
                 .collectList();
+    }
+
+    public Mono<GetAvatarResponse> getAvatarOfListUser(GetAvatarRequest request) {
+        return Flux.fromIterable(request.getUserIds())
+                .flatMap(userId -> mediaRepository.findByOwnerIdAndIsAvatar(userId, true))
+                .collectMap(
+                        Media::getOwnerId,
+                        Media::getSecureUrl
+                )
+                .map(stringStringMap -> GetAvatarResponse.builder().userAvatarUrls(stringStringMap).build());
     }
 }
